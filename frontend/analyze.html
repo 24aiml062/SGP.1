@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Your Business - Digital Growth Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <span>Growth Agent</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="analyze.html" class="active">Get Started</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="container">
+            <h1>Create Your Digital Strategy</h1>
+            <p>Answer a few questions about your business to get personalized recommendations</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="form-section">
+                <div class="form-header">
+                    <h2>Tell Us About Your Business</h2>
+                    <p>This information helps us create recommendations specific to your needs.</p>
+                </div>
+
+                <form id="businessForm">
+                    <div class="form-group">
+                        <label>Business Name</label>
+                        <input type="text" id="businessName" required placeholder="e.g., Sweet Delights Bakery">
+                    </div>
+
+                    <div class="form-group">
+                        <label>What type of business do you run?</label>
+                        <input type="text" id="businessType" placeholder="e.g., Bakery, Salon, Restaurant, Retail Store" required>
+                        <div class="input-hint">This helps us recommend the right platforms and content</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>What products or services do you offer?</label>
+                        <textarea id="products" rows="2" placeholder="e.g., Custom cakes, pastries, desserts for special occasions" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Where is your business located?</label>
+                        <input type="text" id="location" placeholder="e.g., Downtown Chicago, IL" required>
+                        <div class="input-hint">City or neighborhood helps with local marketing strategies</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Who are your target customers?</label>
+                        <input type="text" id="targetCustomers" placeholder="e.g., Families, young professionals, event planners" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>What's your price range?</label>
+                        <select id="priceRange" required>
+                            <option value="">Select your pricing level...</option>
+                            <option value="Budget-friendly">Budget-friendly ($) - Affordable for most customers</option>
+                            <option value="Mid-range">Mid-range ($$) - Moderate pricing</option>
+                            <option value="Premium">Premium ($$$) - Higher-end products/services</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current digital presence <span class="label-optional">(optional)</span></label>
+                        <input type="text" id="currentPresence" placeholder="e.g., Facebook page, Instagram account, or None">
+                        <div class="input-hint">Let us know what you're already using</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>What are your main business goals?</label>
+                        <textarea id="goals" rows="2" placeholder="e.g., Attract more local customers, increase online orders, build brand awareness" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large btn-block">Generate My Strategy</button>
+                </form>
+            </div>
+
+            <div class="card" id="outputSection" style="display: none; margin-top: 2rem;">
+                <div class="card-header">
+                    <h2 class="card-title">Your Digital Growth Strategy</h2>
+                </div>
+                <div class="card-body" id="strategyOutput"></div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Creating your personalized strategy...</p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">&copy; 2026 Digital Growth Agent. Helping small businesses thrive online.</p>
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="analyze.html">Get Started</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
