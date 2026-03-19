@@ -1,3 +1,5 @@
+// Switch to your Render URL after deployment, e.g.:
+// const API_URL = 'https://digital-growth-agent.onrender.com';
 const API_URL = 'http://localhost:8000';
 
 document.getElementById('businessForm').addEventListener('submit', async (e) => {

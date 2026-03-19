@@ -1,0 +1,116 @@
+========================================
+AI DIGITAL GROWTH AGENT
+How to Run - Simple Instructions
+========================================
+
+STEP 1: INSTALL
+---------------
+Double-click: install.bat
+
+Wait for it to finish. You should see "Installation Complete!"
+
+
+STEP 2: START
+-------------
+Double-click: start.bat
+
+This will:
+- Open 2 command windows (don't close them!)
+- Open your web browser automatically
+
+
+STEP 3: USE
+-----------
+In the browser:
+1. Fill in your business information
+2. Click "Generate Strategy"
+3. Wait 2-3 seconds
+4. View your personalized marketing strategy!
+
+
+TROUBLESHOOTING
+---------------
+
+Problem: "Python is not recognized"
+Solution: Install Python from python.org
+         Make sure to check "Add Python to PATH" during installation
+
+Problem: Nothing happens when I click start.bat
+Solution: Right-click start.bat → "Run as administrator"
+
+Problem: Browser shows "Failed to generate strategy"
+Solution: Make sure both command windows are open and running
+         Backend window should show: "Uvicorn running on http://0.0.0.0:8000"
+
+Problem: Port already in use
+Solution: Close any other programs using ports 8000 or 8001
+         Or restart your computer
+
+
+MANUAL START (Alternative)
+---------------------------
+
+If start.bat doesn't work, do this:
+
+Terminal 1:
+  cd backend
+  python main.py
+
+Terminal 2:
+  cd frontend
+  python -m http.server 8001
+
+Then open browser to: http://localhost:8001
+
+
+TESTING
+-------
+
+To test if everything is working:
+  python test_agent.py
+
+You should see: "✓ All tests passed!"
+
+
+STOPPING
+--------
+
+To stop the application:
+- Close both command windows
+- Or press Ctrl+C in each window
+
+
+NEED HELP?
+----------
+
+1. Run: check_setup.bat
+   This checks if everything is installed correctly
+
+2. Read: QUICKSTART.md
+   Detailed step-by-step guide
+
+3. Read: TROUBLESHOOTING.md
+   Solutions to common problems
+
+
+WHAT THIS DOES
+--------------
+
+This application helps small businesses create:
+- Digital marketing strategies
+- Social media content ideas
+- Promotional captions
+- Hashtag suggestions
+- 30-day action plans
+
+Perfect for:
+- Bakeries, restaurants, cafes
+- Salons, spas, boutiques
+- Local service businesses
+- Retail shops
+- Any small business wanting to grow online!
+
+
+========================================
+Questions? Check the README.md file
+========================================
