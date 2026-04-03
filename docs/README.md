@@ -111,3 +111,9 @@ Need help? Check:
 ---
 
 **Last Updated:** 2026-02-09
+
+## New in v2.1
+
+| # | Document | Description |
+|---|----------|-------------|
+| 13 | [Content Generation](13_CONTENT_GENERATION.md) | AI content gen — social, SEO, ad copy |

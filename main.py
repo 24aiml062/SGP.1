@@ -1,7 +1,17 @@
+import sys
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env from project root
+
+# Make backend/ importable (for agent.py)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+
 from agent import DigitalGrowthAgent
 from app.routes.content import router as content_router
 
@@ -14,9 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 agent = DigitalGrowthAgent()
 app.include_router(content_router)
-agent = DigitalGrowthAgent()
 
 
 class BusinessInput(BaseModel):
@@ -43,4 +53,4 @@ async def generate_strategy(business: BusinessInput):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

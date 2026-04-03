@@ -1,6 +1,6 @@
 // Switch to your Render URL after deployment, e.g.:
 // const API_URL = 'https://digital-growth-agent.onrender.com';
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:8080';
 
 document.getElementById('businessForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -27,7 +27,10 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
             body: JSON.stringify(businessData)
         });
         
-        if (!response.ok) throw new Error('Failed to generate strategy');
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(`Server error ${response.status}: ${errData.detail || response.statusText}`);
+        }
         
         const strategy = await response.json();
         displayStrategy(strategy);
@@ -36,7 +39,7 @@ document.getElementById('businessForm').addEventListener('submit', async (e) => 
         document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
         
     } catch (error) {
-        alert('Error generating strategy. Please ensure the backend server is running.');
+        alert('Error: ' + error.message + '\n\nMake sure you opened the page via http://localhost:8001 (not file://)');
         console.error(error);
     } finally {
         document.getElementById('loading').style.display = 'none';

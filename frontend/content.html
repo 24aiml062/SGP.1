@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Generator - Digital Growth Agent</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Page layout ── */
+        .content-page { padding: var(--space-xl) 0; }
+
+        .stats-row {
+            display: flex;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md) var(--space-xl);
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+        .stat-card .stat-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
+        }
+
+        /* ── Two-column layout ── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        /* ── Plan context card ── */
+        .plan-card {
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            padding: var(--space-md) var(--space-lg);
+            margin-bottom: var(--space-lg);
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--space-md);
+        }
+        .plan-card .plan-fields { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-lg); }
+        .plan-card .plan-field strong { color: var(--text-primary); font-weight: 600; }
+        .plan-card .plan-edit { font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+        .plan-card.empty { font-style: italic; }
+
+        /* ── plan_used badge / notice ── */
+        .plan-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(13,148,136,0.1);
+            color: var(--teal);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+        .plan-notice {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: var(--space-sm);
+        }
+
+        /* ── Tab switcher ── */
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: var(--space-lg);
+        }
+        .tab-btn {
+            padding: var(--space-sm) var(--space-md);
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+
+        /* ── Tone pills ── */
+        .tone-group {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+        .tone-pill {
+            padding: var(--space-xs) var(--space-md);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            background: var(--bg-white);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .tone-pill.selected {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        /* ── Output panel ── */
+        .output-panel {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+        }
+        .output-panel h3 {
+            margin-bottom: var(--space-lg);
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: var(--space-md);
+        }
+        .empty-state .empty-icon { font-size: 3rem; }
+
+        .result-body {
+            display: none;
+            flex-direction: column;
+            gap: var(--space-lg);
+            flex: 1;
+        }
+
+        .content-text {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-lg);
+            font-size: var(--font-size-base);
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            flex: 1;
+        }
+
+        .hashtag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+        .hashtag-pill {
+            background: rgba(13, 148, 136, 0.1);
+            color: var(--teal);
+            padding: var(--space-xs) var(--space-md);
+            border-radius: 20px;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        .char-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .action-row {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .seo-extras {
+            display: none;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        .seo-field {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+        }
+        .seo-field label {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: var(--space-xs);
+        }
+        .seo-field p { margin: 0; font-size: var(--font-size-sm); color: var(--text-primary); }
+
+        .error-banner {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            color: var(--error);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--space-md);
+        }
+
+        /* ── Spinner inside button ── */
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @media (max-width: 900px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <span>Growth Agent</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="analyze.html">Analyze</a></li>
+                <li><a href="content.html" class="active">Content</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="container">
+            <h1>Content Generator</h1>
+            <p>Create AI-powered marketing content for social media, SEO, and ads</p>
+        </div>
+    </section>
+
+    <div class="container content-page">
+
+        <!-- Stats row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="statGenerated">0</div>
+                <div class="stat-label">Generated today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statTokens">0</div>
+                <div class="stat-label">Tokens used</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statSaved">0</div>
+                <div class="stat-label">Saved copies</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+
+            <!-- ── Input panel ── -->
+            <div class="form-section">
+                <div class="form-header">
+                    <h2>Create Content</h2>
+                    <p>Fill in the details and choose your content type.</p>
+                </div>
+
+                <!-- Tab switcher -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="social_media">Social Media</button>
+                    <button class="tab-btn" data-tab="seo">SEO Content</button>
+                    <button class="tab-btn" data-tab="ad_copy">Ad Copy</button>
+                </div>
+
+                <div id="errorBanner" class="error-banner"></div>
+
+                <form id="contentForm">
+                    <!-- Platform -->
+                    <div class="form-group">
+                        <label>Platform</label>
+                        <select id="platform" required>
+                            <option value="Instagram">Instagram</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="Twitter/X">Twitter / X</option>
+                            <option value="Facebook">Facebook</option>
+                        </select>
+                    </div>
+
+                    <!-- Tone -->
+                    <div class="form-group">
+                        <label>Tone</label>
+                        <div class="tone-group" id="toneGroup">
+                            <button type="button" class="tone-pill selected" data-tone="professional">Professional</button>
+                            <button type="button" class="tone-pill" data-tone="casual">Casual</button>
+                            <button type="button" class="tone-pill" data-tone="witty">Witty</button>
+                            <button type="button" class="tone-pill" data-tone="urgent">Urgent</button>
+                        </div>
+                        <input type="hidden" id="selectedTone" value="professional">
+                    </div>
+
+                    <!-- Product name -->
+                    <div class="form-group">
+                        <label>Product / Brand name</label>
+                        <input type="text" id="productName" placeholder="e.g. Sunrise Bakery" required>
+                    </div>
+
+                    <!-- Target audience -->
+                    <div class="form-group">
+                        <label>Target audience</label>
+                        <input type="text" id="targetAudience" placeholder="e.g. Foodies and local families" required>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label>Description / Brief</label>
+                        <textarea id="description" rows="3" placeholder="Describe your product, offer, or campaign..." required></textarea>
+                    </div>
+
+                    <!-- Keywords -->
+                    <div class="form-group">
+                        <label>Keywords <span class="label-optional">(comma-separated)</span></label>
+                        <input type="text" id="keywords" placeholder="e.g. sourdough, fresh, artisan">
+                        <div class="input-hint">Used to guide the AI's word choices</div>
+                    </div>
+
+                    <!-- CTA -->
+                    <div class="form-group">
+                        <label>Call to action <span class="label-optional">(optional)</span></label>
+                        <input type="text" id="cta" placeholder="e.g. Visit us today!">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large btn-block" id="generateBtn">
+                        <span class="btn-spinner" id="btnSpinner"></span>
+                        <span id="btnText">Generate Content</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- ── Output panel ── -->
+            <div class="output-panel">
+                <h3>Generated Content</h3>
+
+                <!-- Empty state -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">✍️</div>
+                    <p>Your generated content will appear here.</p>
+                    <p class="text-muted" style="font-size:var(--font-size-sm)">Fill in the form and click Generate.</p>
+                </div>
+
+                <!-- Result -->
+                <div class="result-body" id="resultBody">
+                    <div class="content-text" id="contentText"></div>
+
+                    <!-- SEO extras (meta description + title tag) -->
+                    <div class="seo-extras" id="seoExtras">
+                        <div class="seo-field">
+                            <label>Title Tag</label>
+                            <p id="seoTitle"></p>
+                        </div>
+                        <div class="seo-field">
+                            <label>Meta Description</label>
+                            <p id="seoMeta"></p>
+                        </div>
+                    </div>
+
+                    <!-- Hashtags (social only) -->
+                    <div class="hashtag-row" id="hashtagRow"></div>
+
+                    <!-- Char count + actions -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-sm);">
+                        <div style="display:flex;align-items:center;gap:var(--space-sm);">
+                            <span class="char-badge">📏 <span id="charCount">0</span> characters</span>
+                            <span id="planBadge" class="plan-badge" style="display:none;">✓ Aligned with your growth plan</span>
+                        </div>
+                        <div class="action-row">
+                            <button class="btn btn-secondary" id="copyBtn">Copy</button>
+                            <button class="btn btn-secondary" id="regenBtn">Regenerate</button>
+                            <button class="btn btn-primary" id="saveBtn">Save</button>
+                        </div>
+                    </div>
+                    <div id="planNotice" class="plan-notice" style="display:none;">
+                        This content was generated without your growth plan.
+                        <a href="#" id="planNoticeLink">Set up plan →</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">&copy; 2026 Digital Growth Agent.</p>
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="analyze.html">Analyze</a></li>
+                    <li><a href="content.html">Content</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    const API = 'http://localhost:8080';
+
+    // ── Session state ──
+    const state = {
+        activeTab: 'social_media',
+        tone: 'professional',
+        generatedToday: 0,
+        tokensUsed: 0,
+        savedCount: 0,
+        lastRequest: null,
+        plan: {},
+    };
+
+    // ── Load growth plan on page load ──────────────────────────────────
+    async function loadPlan() {
+        try {
+            const res = await fetch(`${API}/api/content/plan`);
+            if (!res.ok) return;
+            const plan = await res.json();
+            state.plan = plan;
+            renderPlanCard(plan);
+            autoFillFromPlan(plan);
+        } catch (_) {
+            // Plan unavailable — silent fail, form still works
+        }
+    }
+
+    function renderPlanCard(plan) {
+        const card = document.getElementById('planCard');
+        const editLink = document.getElementById('planEditLink');
+        const hasData = plan && Object.keys(plan).length > 0;
+
+        if (!hasData) {
+            card.className = 'plan-card empty';
+            card.innerHTML = `
+                <span>Your growth plan isn't set up yet. Content will be generated from your brief only.</span>
+                <a href="#plan-setup" class="plan-edit">Set up your plan →</a>`;
+            return;
+        }
+
+        const fields = [];
+        if (plan.growth_objective) fields.push(`<span class="plan-field"><strong>Goal:</strong> ${plan.growth_objective}</span>`);
+        if (plan.target_audience)  fields.push(`<span class="plan-field"><strong>Audience:</strong> ${plan.target_audience}</span>`);
+        if (plan.tone)             fields.push(`<span class="plan-field"><strong>Tone:</strong> ${plan.tone}</span>`);
+        if (plan.niche)            fields.push(`<span class="plan-field"><strong>Niche:</strong> ${plan.niche}</span>`);
+
+        card.className = 'plan-card';
+        card.innerHTML = `
+            <div class="plan-fields">${fields.join('')}</div>
+            <a href="#plan-setup" class="plan-edit">Edit plan →</a>`;
+    }
+
+    function autoFillFromPlan(plan) {
+        if (!plan || !Object.keys(plan).length) return;
+
+        // Pre-select tone pill
+        if (plan.tone) {
+            const tonePill = document.querySelector(`.tone-pill[data-tone="${plan.tone}"]`);
+            if (tonePill) {
+                document.querySelectorAll('.tone-pill').forEach(p => p.classList.remove('selected'));
+                tonePill.classList.add('selected');
+                state.tone = plan.tone;
+            }
+        }
+
+        // Pre-select platform from plan's primary platform
+        if (plan.platforms && plan.platforms.length) {
+            const primary = Array.isArray(plan.platforms) ? plan.platforms[0] : plan.platforms;
+            const platformSel = document.getElementById('platform');
+            const opt = [...platformSel.options].find(o => o.value.toLowerCase() === primary.toLowerCase());
+            if (opt) platformSel.value = opt.value;
+        }
+
+        // Pre-fill target audience
+        if (plan.target_audience) {
+            const audienceInput = document.getElementById('targetAudience');
+            if (!audienceInput.value) audienceInput.value = plan.target_audience;
+        }
+    }
+
+    loadPlan();
+
+    // ── Auto-fill + auto-generate when arriving from analyze.html ────────
+    (function applyStrategyFromSession() {
+        const raw = sessionStorage.getItem('growthStrategy');
+        if (!raw) return;
+        sessionStorage.removeItem('growthStrategy');
+
+        let s;
+        try { s = JSON.parse(raw); } catch (_) { return; }
+
+        // Product name — brand personality or value proposition opener
+        const productName = s.business_positioning?.brand_personality
+            || s.business_positioning?.value_proposition?.split(' for ')[0]?.replace('Quality ', '').trim()
+            || '';
+        if (productName) document.getElementById('productName').value = productName;
+
+        // Target audience — ideal_customer field
+        const audience = s.business_positioning?.ideal_customer
+            || s.business_positioning?.value_proposition?.split(' for ')?.[1]?.split(' in ')?.[0]?.trim()
+            || '';
+        if (audience) document.getElementById('targetAudience').value = audience;
+
+        // Description — value proposition
+        const desc = s.business_positioning?.value_proposition || '';
+        if (desc) document.getElementById('description').value = desc;
+
+        // Keywords — hashtag suggestions with # stripped
+        const hashtags = s.sample_content?.hashtag_suggestions || [];
+        const keywords = hashtags.slice(0, 5).map(h => h.replace(/^#/, '')).join(', ');
+        if (keywords) document.getElementById('keywords').value = keywords;
+
+        // CTA — first week_1 action item
+        const cta = s.action_plan_30_days?.week_1?.[0] || '';
+        if (cta) document.getElementById('cta').value = cta;
+
+        // Auto-trigger generation after a short delay (let loadPlan finish)
+        setTimeout(() => generate(), 300);
+    })();
+
+    // ── Platform options per tab ──
+    const PLATFORMS = {
+        social_media: ['Instagram', 'LinkedIn', 'Twitter/X', 'Facebook'],
+        seo:          ['Blog', 'Google Search', 'Meta Description', 'Landing Page'],
+        ad_copy:      ['Google Ads', 'Meta Ads', 'Email Subject Line'],
+    };
+
+    // ── Tab switching ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.activeTab = btn.dataset.tab;
+            updatePlatformOptions();
+        });
+    });
+
+    function updatePlatformOptions() {
+        const sel = document.getElementById('platform');
+        sel.innerHTML = PLATFORMS[state.activeTab]
+            .map(p => `<option value="${p}">${p}</option>`)
+            .join('');
+    }
+
+    // ── Tone pills ──
+    document.querySelectorAll('.tone-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.tone-pill').forEach(p => p.classList.remove('selected'));
+            pill.classList.add('selected');
+            state.tone = pill.dataset.tone;
+            document.getElementById('selectedTone').value = state.tone;
+        });
+    });
+
+    // ── Form submit ──
+    document.getElementById('contentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await generate();
+    });
+
+    document.getElementById('regenBtn').addEventListener('click', async () => {
+        if (state.lastRequest) await generate();
+    });
+
+    async function generate() {
+        hideError();
+        setLoading(true);
+
+        const keywords = document.getElementById('keywords').value
+            .split(',').map(k => k.trim()).filter(Boolean);
+
+        const payload = {
+            content_type: state.activeTab,
+            platform: document.getElementById('platform').value,
+            variants: 1,
+            brief: {
+                product_name:    document.getElementById('productName').value.trim(),
+                description:     document.getElementById('description').value.trim(),
+                target_audience: document.getElementById('targetAudience').value.trim(),
+                tone:            state.tone,
+                keywords,
+                cta: document.getElementById('cta').value.trim() || null,
+            },
+        };
+
+        state.lastRequest = payload;
+
+        try {
+            const res = await fetch(`${API}/api/content/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || `Server error ${res.status}`);
+            }
+
+            const data = await res.json();
+            renderResult(data);
+
+            // Update stats
+            state.generatedToday++;
+            state.tokensUsed += data.tokens_used || 0;
+            updateStats();
+
+        } catch (err) {
+            showError(err.message || 'Failed to generate content. Is the backend running?');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function renderResult(data) {
+        const variant = data.variants[0];
+
+        document.getElementById('emptyState').style.display = 'none';
+        const resultBody = document.getElementById('resultBody');
+        resultBody.style.display = 'flex';
+
+        document.getElementById('contentText').textContent = variant.body;
+        document.getElementById('charCount').textContent = variant.character_count;
+
+        // Hashtags
+        const hashRow = document.getElementById('hashtagRow');
+        hashRow.innerHTML = '';
+        if (variant.hashtags && variant.hashtags.length) {
+            variant.hashtags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'hashtag-pill';
+                span.textContent = tag.startsWith('#') ? tag : '#' + tag;
+                hashRow.appendChild(span);
+            });
+        }
+
+        // SEO extras
+        const seoExtras = document.getElementById('seoExtras');
+        if (data.content_type === 'seo' && (variant.title_tag || variant.meta_description)) {
+            seoExtras.style.display = 'flex';
+            document.getElementById('seoTitle').textContent = variant.title_tag || '—';
+            document.getElementById('seoMeta').textContent  = variant.meta_description || '—';
+        } else {
+            seoExtras.style.display = 'none';
+        }
+
+        // plan_used indicator
+        const badge  = document.getElementById('planBadge');
+        const notice = document.getElementById('planNotice');
+        if (data.plan_used) {
+            badge.style.display  = 'inline-flex';
+            notice.style.display = 'none';
+        } else {
+            badge.style.display  = 'none';
+            notice.style.display = 'block';
+        }
+    }
+
+    // ── Copy ──
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const text = document.getElementById('contentText').textContent;
+        const hashtags = [...document.querySelectorAll('.hashtag-pill')]
+            .map(p => p.textContent).join(' ');
+        navigator.clipboard.writeText(text + (hashtags ? '\n\n' + hashtags : ''))
+            .then(() => flashBtn('copyBtn', 'Copied!'));
+    });
+
+    // ── Save ──
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        state.savedCount++;
+        updateStats();
+        flashBtn('saveBtn', 'Saved ✓');
+    });
+
+    function flashBtn(id, label) {
+        const btn = document.getElementById(id);
+        const orig = btn.textContent;
+        btn.textContent = label;
+        setTimeout(() => btn.textContent = orig, 1500);
+    }
+
+    function updateStats() {
+        document.getElementById('statGenerated').textContent = state.generatedToday;
+        document.getElementById('statTokens').textContent = state.tokensUsed.toLocaleString();
+        document.getElementById('statSaved').textContent = state.savedCount;
+    }
+
+    function setLoading(on) {
+        document.getElementById('btnSpinner').style.display = on ? 'block' : 'none';
+        document.getElementById('btnText').textContent = on ? 'Generating…' : 'Generate Content';
+        document.getElementById('generateBtn').disabled = on;
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorBanner');
+        el.textContent = '⚠ ' + msg;
+        el.style.display = 'block';
+    }
+
+    function hideError() {
+        document.getElementById('errorBanner').style.display = 'none';
+    }
+    </script>
+</body>
+</html>

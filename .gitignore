@@ -19,3 +19,7 @@ build/
 .idea/
 .vscode/
 *.log
+
+# Environment variables - never commit API keys
+.env
+.env.*

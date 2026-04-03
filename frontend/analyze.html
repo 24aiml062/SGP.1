@@ -17,6 +17,7 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="analyze.html" class="active">Get Started</a></li>
+                <li><a href="content.html">Content</a></li>
             </ul>
         </div>
     </nav>
@@ -116,6 +117,139 @@
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+    const API_URL = 'http://localhost:8080';
+
+    document.getElementById('businessForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const businessData = {
+            business_name: document.getElementById('businessName').value,
+            business_type: document.getElementById('businessType').value,
+            products_services: document.getElementById('products').value,
+            location: document.getElementById('location').value,
+            target_customers: document.getElementById('targetCustomers').value,
+            price_range: document.getElementById('priceRange').value,
+            current_presence: document.getElementById('currentPresence').value || 'None',
+            goals: document.getElementById('goals').value
+        };
+
+        document.getElementById('loading').style.display = 'flex';
+        document.getElementById('outputSection').style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_URL}/generate-strategy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(businessData)
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(`Server error ${response.status}: ${errData.detail || response.statusText}`);
+            }
+
+            const strategy = await response.json();
+            displayStrategy(strategy);
+            document.getElementById('outputSection').style.display = 'block';
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (error) {
+            alert('Error: ' + error.message);
+            console.error('Full error:', error);
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    });
+
+    function displayStrategy(strategy) {
+        const output = document.getElementById('strategyOutput');
+        let html = '';
+
+        // Safe helper — returns empty array if field missing
+        const safe = (arr) => Array.isArray(arr) ? arr : [];
+
+        html += createSection('Business Positioning', `
+            <p><strong>Brand Personality:</strong> ${strategy.business_positioning?.brand_personality || ''}</p>
+            <p><strong>Value Proposition:</strong> ${strategy.business_positioning?.value_proposition || ''}</p>
+            <p><strong>Tone:</strong> ${strategy.business_positioning?.tone || 'Friendly'}</p>
+        `);
+
+        html += createSection('Recommended Platforms',
+            safe(strategy.platform_strategy?.recommended_platforms).map(p =>
+                `<div class="platform-card">
+                    <strong>${p.platform}</strong> (Priority ${p.priority})<br>
+                    <small>${p.reason}</small>
+                </div>`
+            ).join('')
+        );
+
+        const gs = strategy.growth_strategy || {};
+        html += createSection('Growth Strategy', `
+            ${safe(gs.customer_attraction).length ? `<h4>Customer Attraction</h4><ul>${safe(gs.customer_attraction).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(gs.trust_building).length ? `<h4>Trust Building</h4><ul>${safe(gs.trust_building).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(gs.visibility_improvement).length ? `<h4>Visibility Improvement</h4><ul>${safe(gs.visibility_improvement).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(gs.retention_tactics).length ? `<h4>Retention Tactics</h4><ul>${safe(gs.retention_tactics).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+        `);
+
+        const cs = strategy.content_strategy || {};
+        html += createSection('Content Strategy', `
+            <p><strong>Optimal Posting Times:</strong> ${cs.optimal_times || ''}</p>
+            <h4>Content Mix</h4>
+            <ul>
+                <li>Educational: ${cs.content_mix?.Educational || ''}</li>
+                <li>Promotional: ${cs.content_mix?.Promotional || ''}</li>
+                <li>Engagement: ${cs.content_mix?.Engagement || ''}</li>
+            </ul>
+        `);
+
+        const ci = strategy.content_ideas || {};
+        html += createSection('Content Ideas', `
+            ${safe(ci.social_posts).length ? `<h4>Social Media Posts</h4><ul>${safe(ci.social_posts).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(ci.video_ideas).length ? `<h4>Video Ideas</h4><ul>${safe(ci.video_ideas).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+        `);
+
+        const sc = strategy.sample_content || {};
+        html += createSection('Ready-to-Use Content', `
+            <h4>Promotional Captions</h4>
+            ${safe(sc.promotional_captions).map(c => `<div class="caption-box">${c}</div>`).join('')}
+            <h4>Suggested Hashtags</h4>
+            <div class="hashtags">
+                ${safe(sc.hashtag_suggestions).map(h => `<span class="hashtag">${h}</span>`).join('')}
+            </div>
+        `);
+
+        const ap = strategy.action_plan_30_days || {};
+        html += createSection('30-Day Action Plan', `
+            ${safe(ap.week_1).length ? `<h4>Week 1: Foundation</h4><ul>${safe(ap.week_1).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(ap.week_2).length ? `<h4>Week 2: Content Launch</h4><ul>${safe(ap.week_2).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(ap.week_3).length ? `<h4>Week 3: Campaigns</h4><ul>${safe(ap.week_3).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+            ${safe(ap.week_4).length ? `<h4>Week 4: Optimization</h4><ul>${safe(ap.week_4).map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+        `);
+
+        output.innerHTML = html;
+
+        // ── Link to content generator ──────────────────────────────────
+        const card = document.getElementById('outputSection');
+        // Remove any previously injected button
+        const existing = card.querySelector('#goToContentBtn');
+        if (existing) existing.remove();
+
+        const btn = document.createElement('div');
+        btn.style.marginTop = '1.5rem';
+        btn.innerHTML = `<button id="goToContentBtn" class="btn btn-primary btn-large"
+            style="width:100%">Generate Content for This Strategy</button>`;
+        card.appendChild(btn);
+
+        document.getElementById('goToContentBtn').addEventListener('click', () => {
+            sessionStorage.setItem('growthStrategy', JSON.stringify(strategy));
+            window.location.href = 'content.html';
+        });
+    }
+
+    function createSection(title, content) {
+        return `<div class="strategy-section"><h3>${title}</h3>${content}</div>`;
+    }
+    </script>
 </body>
 </html>

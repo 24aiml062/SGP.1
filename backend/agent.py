@@ -1,53 +1,44 @@
 """
 Hybrid AI Digital Growth Agent
-Combines rule-based logic with Anthropic Claude for content generation
+Uses Hugging Face Inference API (Mistral-7B) for content generation
+with rule-based fallback when the API key is not set.
 """
 
 import json
 import os
+import re
+import requests
 from typing import Dict, Any
+from huggingface_hub import InferenceClient
 
-# Try to import Anthropic - graceful fallback if not available
-try:
-    import anthropic
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
-    print("⚠️  Anthropic not installed. Install with: pip install anthropic")
+HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 
 class DigitalGrowthAgent:
     """
-    Hybrid AI Agent:
-    - Anthropic Claude for creative content and personalized strategies
+    Hybrid agent:
+    - Hugging Face (Mistral-7B) for creative, personalised content
     - Rule-based logic for platform recommendations and structure
     """
 
     def __init__(self):
         self.use_ai = False
-        self.client = None
+        self._hf = None
 
-        if ANTHROPIC_AVAILABLE:
-            api_key = os.getenv("ANTHROPIC_API_KEY")
-            if api_key:
-                try:
-                    self.client = anthropic.Anthropic(api_key=api_key)
-                    self.use_ai = True
-                    print("✓ Digital Growth Agent initialized with AI (Anthropic Claude)")
-                except Exception as e:
-                    print(f"⚠️  Anthropic initialization failed: {e}")
-                    print("✓ Digital Growth Agent initialized (rule-based mode)")
-            else:
-                print("⚠️  ANTHROPIC_API_KEY not found in environment")
-                print("✓ Digital Growth Agent initialized (rule-based mode)")
+        api_key = os.getenv("HF_API_KEY")
+        if api_key and not api_key.startswith("hf_your"):
+            self._hf = InferenceClient(api_key=api_key)
+            self.use_ai = True
+            print("✓ Digital Growth Agent initialized with AI (HuggingFace Qwen2.5-7B)")
         else:
+            print("⚠️  HF_API_KEY not set — running in rule-based mode")
             print("✓ Digital Growth Agent initialized (rule-based mode)")
 
+    # ------------------------------------------------------------------ #
+    # Public entry point                                                   #
+    # ------------------------------------------------------------------ #
+
     def generate_strategy(self, business_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate comprehensive digital marketing strategy.
-        HYBRID: AI for creative content, rules for structure.
-        """
         name             = business_data.get("business_name", "")
         biz_type         = business_data.get("business_type", "")
         products         = business_data.get("products_services", "")
@@ -57,47 +48,34 @@ class DigitalGrowthAgent:
         price_range      = business_data.get("price_range", "")
         current_presence = business_data.get("current_presence", "None")
 
-        # RULE-BASED: always deterministic
+        # Always rule-based
         platform_strategy = self._generate_platform_strategy(biz_type, target, goals)
         local_expansion   = self._generate_local_expansion(biz_type, location)
         action_plan       = self._generate_action_plan(biz_type)
 
-        # AI-POWERED: creative content via Claude
+        # AI-powered creative content
         if self.use_ai:
             try:
-                ai_content = self._generate_ai_content(
-                    name, biz_type, products, location,
-                    target, goals, price_range, current_presence
-                )
+                ai = self._call_hf(name, biz_type, products, location,
+                                   target, goals, price_range, current_presence)
                 return {
-                    "business_positioning": ai_content.get(
-                        "business_positioning",
-                        self._generate_positioning(name, biz_type, products, target)
-                    ),
-                    "platform_strategy": platform_strategy,
-                    "growth_strategy": ai_content.get(
-                        "growth_strategy",
-                        self._generate_growth_strategy(biz_type, target, goals)
-                    ),
-                    "content_strategy": ai_content.get(
-                        "content_strategy",
-                        self._generate_content_strategy(biz_type, target)
-                    ),
-                    "content_ideas": ai_content.get(
-                        "content_ideas",
-                        self._generate_content_ideas(biz_type, products)
-                    ),
-                    "sample_content": ai_content.get(
-                        "sample_content",
-                        self._generate_sample_content(name, biz_type, products)
-                    ),
-                    "local_expansion": local_expansion,
-                    "action_plan_30_days": action_plan,
+                    "business_positioning": ai.get("business_positioning",
+                        self._generate_positioning(name, biz_type, products, target)),
+                    "platform_strategy":    platform_strategy,
+                    "growth_strategy":      ai.get("growth_strategy",
+                        self._generate_growth_strategy(biz_type, target, goals)),
+                    "content_strategy":     ai.get("content_strategy",
+                        self._generate_content_strategy(biz_type, target)),
+                    "content_ideas":        ai.get("content_ideas",
+                        self._generate_content_ideas(biz_type, products)),
+                    "sample_content":       ai.get("sample_content",
+                        self._generate_sample_content(name, biz_type, products)),
+                    "local_expansion":      local_expansion,
+                    "action_plan_30_days":  action_plan,
                 }
             except Exception as e:
-                print(f"⚠️  AI generation failed: {e} — using rule-based fallback")
+                print(f"⚠️  HF generation failed: {e} — falling back to rules")
 
-        # FALLBACK: pure rule-based
         return {
             "business_positioning": self._generate_positioning(name, biz_type, products, target),
             "platform_strategy":    platform_strategy,
@@ -110,89 +88,52 @@ class DigitalGrowthAgent:
         }
 
     # ------------------------------------------------------------------ #
-    # AI GENERATION (Anthropic Claude)                                     #
+    # Hugging Face call                                                    #
     # ------------------------------------------------------------------ #
 
-    def _generate_ai_content(
-        self,
-        name: str, biz_type: str, products: str, location: str,
-        target: str, goals: str, price_range: str, current_presence: str
-    ) -> Dict[str, Any]:
-        """Call Anthropic Claude and return parsed JSON strategy."""
+    def _call_hf(self, name, biz_type, products, location,
+                 target, goals, price_range, current_presence) -> Dict[str, Any]:
 
-        prompt = f"""You are an expert digital marketing strategist for small local businesses.
-
-Generate a comprehensive digital marketing strategy for:
-
-Business Name: {name}
-Business Type: {biz_type}
-Products/Services: {products}
-Location: {location}
-Target Customers: {target}
-Business Goals: {goals}
-Price Range: {price_range}
-Current Digital Presence: {current_presence}
-
-Return ONLY valid JSON with this exact structure (no markdown, no extra text):
-
-{{
-  "business_positioning": {{
-    "brand_personality": "5-7 word description",
-    "value_proposition": "compelling one-sentence statement",
-    "ideal_customer": "detailed customer profile",
-    "tone": "recommended communication tone"
-  }},
-  "growth_strategy": {{
-    "customer_attraction": ["tip 1", "tip 2", "tip 3", "tip 4"],
-    "trust_building": ["tip 1", "tip 2", "tip 3", "tip 4"],
-    "visibility_improvement": ["tip 1", "tip 2", "tip 3", "tip 4"],
-    "retention_tactics": ["tip 1", "tip 2", "tip 3", "tip 4"]
-  }},
-  "content_strategy": {{
-    "posting_frequency": {{
-      "Instagram": "frequency",
-      "Facebook": "frequency",
-      "Google Business": "frequency"
-    }},
-    "optimal_times": "best posting times",
-    "content_mix": {{
-      "Educational": "30% - description",
-      "Promotional": "30% - description",
-      "Engagement": "40% - description"
-    }},
-    "monthly_themes": ["theme 1", "theme 2", "theme 3", "theme 4"]
-  }},
-  "content_ideas": {{
-    "social_posts": ["idea 1", "idea 2", "idea 3", "idea 4", "idea 5"],
-    "video_ideas": ["idea 1", "idea 2", "idea 3", "idea 4", "idea 5"],
-    "engagement_initiatives": ["idea 1", "idea 2", "idea 3", "idea 4"]
-  }},
-  "sample_content": {{
-    "promotional_captions": ["caption with emojis", "caption with emojis", "caption with emojis"],
-    "engagement_captions": ["caption with emojis", "caption with emojis", "caption with emojis"],
-    "hashtag_suggestions": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5", "#tag6", "#tag7", "#tag8"]
-  }}
-}}"""
-
-        # Call Claude — using the Messages API
-        message = self.client.messages.create(
-            model="claude-3-haiku-20240307",   # fast + affordable
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}]
+        user_prompt = (
+            f"Create a digital marketing strategy JSON for:\n"
+            f"Business: {name}, Type: {biz_type}, Products: {products}\n"
+            f"Location: {location}, Customers: {target}, Goals: {goals}\n\n"
+            "Return ONLY this JSON structure (no extra text):\n"
+            '{"business_positioning":{"brand_personality":"...","value_proposition":"...","tone":"..."},'
+            '"growth_strategy":{"customer_attraction":["tip1","tip2","tip3"],"trust_building":["tip1","tip2","tip3"]},'
+            '"sample_content":{"promotional_captions":["caption1 with emoji","caption2 with emoji","caption3 with emoji"],'
+            '"hashtag_suggestions":["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8"]}}'
         )
 
-        raw = message.content[0].text.strip()
+        response = self._hf.chat.completions.create(
+            model=HF_MODEL,
+            messages=[
+                {"role": "system", "content": "You are an expert digital marketing strategist. Always respond with valid JSON only. No explanation, no markdown."},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=1200,
+            temperature=0.7,
+        )
+        text = response.choices[0].message.content or ""
 
-        # Strip markdown code fences if Claude wraps the JSON
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
+        # Extract first valid JSON object using brace matching
+        start = text.find("{")
+        if start == -1:
+            raise ValueError(f"No JSON found in HF response: {text[:200]}")
 
-        return json.loads(raw)
+        depth = 0
+        for i, ch in enumerate(text[start:], start):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return json.loads(text[start:i + 1])
+
+        raise ValueError("Unmatched braces in HF response")
 
     # ------------------------------------------------------------------ #
-    # RULE-BASED HELPERS                                                   #
+    # Rule-based helpers                                                   #
     # ------------------------------------------------------------------ #
 
     def _generate_positioning(self, name, biz_type, products, target):
@@ -204,10 +145,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
         }
 
     def _generate_platform_strategy(self, biz_type, target, goals):
-        platforms = self._recommend_platforms(biz_type, target)
         return {
-            "recommended_platforms": platforms,
-            "priority_order": [p["platform"] for p in platforms],
+            "recommended_platforms": self._recommend_platforms(biz_type, target),
+            "priority_order": [p["platform"] for p in self._recommend_platforms(biz_type, target)],
             "rationale": "Based on your target audience and business type",
         }
 
@@ -215,11 +155,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
         visual = ["bakery", "salon", "restaurant", "retail", "cafe", "food", "beauty"]
         platforms = []
         if any(v in biz_type.lower() for v in visual):
-            platforms.append({
-                "platform": "Instagram",
-                "priority": 1,
-                "reason": "Visual content showcases your products effectively",
-            })
+            platforms.append({"platform": "Instagram", "priority": 1,
+                               "reason": "Visual content showcases your products effectively"})
         platforms.extend([
             {"platform": "Google Business Profile", "priority": 2,
              "reason": "Essential for local search visibility"},
@@ -252,7 +189,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
                 "Create loyalty programs",
                 "Share exclusive offers for followers",
                 "Run contests and giveaways",
-                "Send personalized thank you messages",
+                "Send personalised thank you messages",
             ],
         }
 
